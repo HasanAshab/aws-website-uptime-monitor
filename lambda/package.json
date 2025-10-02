@@ -1,0 +1,12 @@
+{
+  "name": "website-uptime-monitor",
+  "version": "1.0.0",
+  "description": "A Lambda function for website uptime monitoring and alerting",
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "uuid": "^10.0.0"
+  }
+}
