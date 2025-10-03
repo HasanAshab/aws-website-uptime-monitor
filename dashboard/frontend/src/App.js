@@ -1,117 +1,70 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiPlus,
-  FiEdit2,
-  FiTrash2,
-  FiCheck,
-  FiX,
-  FiSave,
-  FiCheckCircle,
+  FiActivity,
   FiAlertCircle,
-  FiLoader,
-  FiClipboard
+  FiClock,
+  FiTrendingUp,
+  FiRefreshCw,
+  FiCheckCircle,
+  FiXCircle,
+  FiLoader
 } from 'react-icons/fi';
-import { todoAPI } from './api';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { uptimeAPI } from './api';
 
 function App() {
-  const [todos, setTodos] = useState([]);
-  const [newTodo, setNewTodo] = useState('');
+  const [metrics, setMetrics] = useState(null);
+  const [recentPings, setRecentPings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [editingId, setEditingId] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Load todos on component mount
+  // Load data on component mount and set up auto-refresh
   useEffect(() => {
-    loadTodos();
+    loadData();
+    const interval = setInterval(loadData, 60000); // Refresh every minute
+    return () => clearInterval(interval);
   }, []);
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const total = todos.length;
-    const completed = todos.filter(todo => todo.checked).length;
-    const pending = total - completed;
-    return { total, completed, pending };
-  }, [todos]);
-
-  const loadTodos = async () => {
+  const loadData = async () => {
     try {
-      setLoading(true);
       setError('');
-      const response = await todoAPI.getTodos();
-      setTodos(response.data || []);
+      const [metricsResponse, pingsResponse] = await Promise.all([
+        uptimeAPI.getMetrics(),
+        uptimeAPI.getRecentPings()
+      ]);
+
+      setMetrics(metricsResponse.data);
+      setRecentPings(pingsResponse.data || []);
     } catch (err) {
-      setError('Failed to load todos. Make sure your API is running.');
-      console.error('Error loading todos:', err);
+      setError('Failed to load uptime data. Make sure your API is running.');
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleAddTodo = async (e) => {
-    e.preventDefault();
-    if (!newTodo.trim()) return;
-
-    try {
-      setError('');
-      const response = await todoAPI.createTodo(newTodo.trim());
-      setTodos([...todos, response.data]);
-      setNewTodo('');
-    } catch (err) {
-      setError('Failed to create todo');
-      console.error('Error creating todo:', err);
-    }
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
   };
 
-  const handleToggleTodo = async (todo) => {
-    try {
-      setError('');
-      const updatedTodo = { ...todo, checked: !todo.checked };
-      await todoAPI.updateTodo(todo.id, updatedTodo);
-      setTodos(todos.map(t => t.id === todo.id ? updatedTodo : t));
-    } catch (err) {
-      setError('Failed to update todo');
-      console.error('Error updating todo:', err);
-    }
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const handleDeleteTodo = async (id) => {
-    try {
-      setError('');
-      await todoAPI.deleteTodo(id);
-      setTodos(todos.filter(t => t.id !== id));
-    } catch (err) {
-      setError('Failed to delete todo');
-      console.error('Error deleting todo:', err);
-    }
+  const getStatusColor = (status) => {
+    return status === 'SUCCESS' ? '#10b981' : '#ef4444';
   };
 
-  const handleEditStart = (todo) => {
-    setEditingId(todo.id);
-    setEditText(todo.text);
-  };
-
-  const handleEditSave = async (id) => {
-    if (!editText.trim()) return;
-
-    try {
-      setError('');
-      const todo = todos.find(t => t.id === id);
-      const updatedTodo = { ...todo, text: editText.trim() };
-      await todoAPI.updateTodo(id, updatedTodo);
-      setTodos(todos.map(t => t.id === id ? updatedTodo : t));
-      setEditingId(null);
-      setEditText('');
-    } catch (err) {
-      setError('Failed to update todo');
-      console.error('Error updating todo:', err);
-    }
-  };
-
-  const handleEditCancel = () => {
-    setEditingId(null);
-    setEditText('');
+  const getStatusIcon = (status) => {
+    return status === 'SUCCESS' ? <FiCheckCircle /> : <FiXCircle />;
   };
 
   if (loading) {
@@ -119,7 +72,7 @@ function App() {
       <div className="container">
         <div className="loading">
           <div className="loading-spinner"></div>
-          <div>Loading your todos...</div>
+          <div>Loading uptime data...</div>
         </div>
       </div>
     );
@@ -133,28 +86,53 @@ function App() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h1>✨ Todo App</h1>
-        <p>Organize your life, one task at a time</p>
+        <h1><FiActivity /> Uptime Monitor</h1>
+        <p>Real-time website monitoring dashboard</p>
+        <button
+          className="refresh-btn"
+          onClick={handleRefresh}
+          disabled={refreshing}
+        >
+          <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </motion.div>
 
-      {stats.total > 0 && (
+      {metrics && (
         <motion.div
-          className="stats"
+          className="metrics-grid"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="stat-item">
-            <div className="stat-number">{stats.total}</div>
-            <div className="stat-label">Total</div>
+          <div className="metric-card uptime">
+            <div className="metric-icon">
+              <FiTrendingUp />
+            </div>
+            <div className="metric-content">
+              <div className="metric-number">{metrics.uptime}%</div>
+              <div className="metric-label">Uptime</div>
+            </div>
           </div>
-          <div className="stat-item">
-            <div className="stat-number">{stats.completed}</div>
-            <div className="stat-label">Completed</div>
+
+          <div className="metric-card errors">
+            <div className="metric-icon">
+              <FiAlertCircle />
+            </div>
+            <div className="metric-content">
+              <div className="metric-number">{metrics.invalidStatusCount}</div>
+              <div className="metric-label">Invalid Status</div>
+            </div>
           </div>
-          <div className="stat-item">
-            <div className="stat-number">{stats.pending}</div>
-            <div className="stat-label">Pending</div>
+
+          <div className="metric-card response-time">
+            <div className="metric-icon">
+              <FiClock />
+            </div>
+            <div className="metric-content">
+              <div className="metric-number">{metrics.avgResponseTime}ms</div>
+              <div className="metric-label">Avg Response Time</div>
+            </div>
           </div>
         </motion.div>
       )}
@@ -174,118 +152,109 @@ function App() {
         )}
       </AnimatePresence>
 
-      <motion.form
-        onSubmit={handleAddTodo}
-        className="add-todo"
+      {recentPings.length > 0 && (
+        <motion.div
+          className="chart-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <h2>Response Time (Last 30 minutes)</h2>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={recentPings.slice().reverse()}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={formatTime}
+                  stroke="#64748b"
+                  fontSize={12}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={12}
+                />
+                <Tooltip
+                  labelFormatter={(value) => `Time: ${formatTime(value)}`}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
+                    color: '#1e293b'
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="responseTime"
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  dot={{ fill: '#6366f1', strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 7, fill: '#8b5cf6' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      )}
+
+      <motion.div
+        className="recent-pings"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
       >
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          placeholder="What needs to be done?"
-          maxLength={200}
-        />
-        <button type="submit" disabled={!newTodo.trim()}>
-          <FiPlus />
-          Add Task
-        </button>
-      </motion.form>
-
-      <ul className="todo-list">
-        <AnimatePresence>
-          {todos.length === 0 ? (
-            <motion.div
-              className="empty-state"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <FiClipboard className="empty-state-icon" />
-              <h3>No tasks yet</h3>
-              <p>Add your first task above to get started!</p>
-            </motion.div>
-          ) : (
-            todos.map((todo, index) => (
-              <motion.li
-                key={todo.id}
-                className={`todo-item ${todo.checked ? 'completed' : ''}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                layout
+        <h2>Recent Ping Results (Last 30 minutes)</h2>
+        <div className="ping-list">
+          <AnimatePresence>
+            {recentPings.length === 0 ? (
+              <motion.div
+                className="empty-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
               >
-                <label className="custom-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={todo.checked}
-                    onChange={() => handleToggleTodo(todo)}
-                  />
-                  <span className="checkmark">
-                    <FiCheck className="checkmark-icon" />
-                  </span>
-                </label>
-
-                {editingId === todo.id ? (
-                  <motion.div
-                    className="edit-form"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <input
-                      type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleEditSave(todo.id)}
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      className="btn-save"
-                      onClick={() => handleEditSave(todo.id)}
+                <FiActivity className="empty-state-icon" />
+                <h3>No recent pings</h3>
+                <p>Waiting for monitoring data...</p>
+              </motion.div>
+            ) : (
+              recentPings.map((ping, index) => (
+                <motion.div
+                  key={ping.id}
+                  className={`ping-item ${ping.status.toLowerCase()}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  layout
+                >
+                  <div className="ping-status">
+                    <span
+                      className="status-icon"
+                      style={{ color: getStatusColor(ping.status) }}
                     >
-                      <FiSave />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-cancel"
-                      onClick={handleEditCancel}
-                    >
-                      <FiX />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <>
-                    <span className={`todo-text ${todo.checked ? 'completed' : ''}`}>
-                      {todo.text}
+                      {getStatusIcon(ping.status)}
                     </span>
-                    <div className="todo-actions">
-                      <button
-                        className="action-btn btn-edit"
-                        onClick={() => handleEditStart(todo)}
-                        title="Edit task"
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button
-                        className="action-btn btn-delete"
-                        onClick={() => handleDeleteTodo(todo.id)}
-                        title="Delete task"
-                      >
-                        <FiTrash2 />
-                      </button>
+                    <span className="status-text">{ping.status}</span>
+                  </div>
+
+                  <div className="ping-details">
+                    <span className="ping-time">{formatTime(ping.timestamp)}</span>
+                    <span className="response-time">{ping.responseTime}ms</span>
+                  </div>
+
+                  {ping.errorMessage && (
+                    <div className="error-message">
+                      {ping.errorMessage}
                     </div>
-                  </>
-                )}
-              </motion.li>
-            ))
-          )}
-        </AnimatePresence>
-      </ul>
+                  )}
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     </div>
   );
 }

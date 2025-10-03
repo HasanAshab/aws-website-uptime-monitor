@@ -1,47 +1,50 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
 const dynamoDb = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
-  const timestamp = new Date().getTime();
-  const data = JSON.parse(event.body);
-
-  if (typeof data.text !== 'string') {
-    console.error('Validation Failed');
-    return {
-      statusCode: 400,
-      headers: { 'Content-Type': 'text/plain' },
-      body: 'Couldn\'t create the todo item.',
-    };
-  }
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+  };
 
   const params = {
     TableName: process.env.DYNAMODB_TABLE,
-    Item: {
-      id: uuidv4(),
-      text: data.text,
-      checked: false,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    },
   };
 
   try {
-    await dynamoDb.send(new PutCommand(params));
+    const result = await dynamoDb.send(new ScanCommand(params));
+    const items = result.Items || [];
+
+    // Filter for last 30 minutes
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    const recentPings = items
+      .filter(item => new Date(item.timestamp) >= thirtyMinutesAgo)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .map(item => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        status: item.status,
+        responseTime: parseInt(item.responseTime) || 0,
+        errorMessage: item.errorMessage || ''
+      }));
 
     return {
       statusCode: 200,
-      body: JSON.stringify(params.Item),
+      headers,
+      body: JSON.stringify(recentPings),
     };
   } catch (error) {
     console.error(error);
     return {
       statusCode: error.statusCode || 501,
-      headers: { 'Content-Type': 'text/plain' },
-      body: 'Couldn\'t create the todo item.',
+      headers,
+      body: JSON.stringify({ error: 'Couldn\'t fetch recent pings.' }),
     };
   }
 };

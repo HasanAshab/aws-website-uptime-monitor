@@ -10,21 +10,15 @@ const api = axios.create({
   },
 });
 
-export const todoAPI = {
-  // Get all todos
-  getTodos: () => api.get('/todos'),
+export const uptimeAPI = {
+  // Get uptime metrics for the current month
+  getMetrics: () => api.get('/metrics'),
 
-  // Get a single todo by ID
-  getTodo: (id) => api.get(`/todos/${id}`),
+  // Get recent ping results (last 30 minutes)
+  getRecentPings: () => api.get('/recent-pings'),
 
-  // Create a new todo
-  createTodo: (text) => api.post('/todos', { text }),
-
-  // Update a todo
-  updateTodo: (id, updates) => api.put(`/todos/${id}`, updates),
-
-  // Delete a todo
-  deleteTodo: (id) => api.delete(`/todos/${id}`),
+  // Get all uptime data (for detailed analysis)
+  getAllData: () => api.get('/uptime-data'),
 };
 
 export default api;

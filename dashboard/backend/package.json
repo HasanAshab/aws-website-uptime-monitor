@@ -1,7 +1,7 @@
 {
-  "name": "serverless-http-api-dynamodb",
+  "name": "uptime-monitor-api",
   "version": "1.0.0",
-  "description": "Serverless TODO CRUD service exposing a REST HTTP interface",
+  "description": "Uptime Monitor Dashboard API",
   "author": "",
   "license": "MIT",
   "type": "module",
