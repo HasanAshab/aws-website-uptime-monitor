@@ -16,6 +16,8 @@ module "dynamodb_table" {
   ]
 }
 
+### Uptime Monitor ###
+# Ping the website and collect metrics
 module "uptime_monitor" {
   source = "./modules/uptime_monitor"
 
@@ -26,5 +28,18 @@ module "uptime_monitor" {
   ping_schedule       = var.uptime_ping_schedule
   assertions          = var.uptime_assertions
   subscriber_email    = var.uptime_alert_subscriber_email
+  dynamodb_table_name = module.dynamodb_table.dynamodb_table_id
+}
+
+
+### Dashboard ###
+# Monitor uptime metrics
+module "dashboard" {
+  source = "./modules/dashboard"
+
+  environment = var.environment
+  name_prefix = local.project_name
+
+  backend_src_root    = "${path.root}/../dashboard/backend"
   dynamodb_table_name = module.dynamodb_table.dynamodb_table_id
 }
