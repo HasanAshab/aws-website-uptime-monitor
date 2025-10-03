@@ -10,7 +10,9 @@ const sns = new SNSClient({});
 const TABLE_NAME = process.env.DYNAMODB_TABLE;
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const WEBSITE_URL = process.env.WEBSITE_URL;
+const EXPECTED_STATUS_CODE = parseInt(process.env.EXPECTED_STATUS_CODE);
 const EXPECTED_KEYWORD = process.env.EXPECTED_KEYWORD;
+const MAX_RESPONSE_TIME_MS = parseInt(process.env.MAX_RESPONSE_TIME_MS)
 
 export async function handler() {
   const start = Date.now();
@@ -23,15 +25,21 @@ export async function handler() {
     responseTime = Date.now() - start;
 
     // Check 1: Website availability
-    if (statusCode !== 200) {
+    if (statusCode !== EXPECTED_STATUS_CODE) {
       status = "FAILURE";
-      errorMessage = `Non-200 status: ${statusCode}`;
+      errorMessage = `Invalid status: ${statusCode}`;
     }
 
     // Check 2: Content validation
     if (status === "SUCCESS" && !body.includes(EXPECTED_KEYWORD)) {
       status = "FAILURE";
       errorMessage = `Keyword "${EXPECTED_KEYWORD}" not found in response`;
+    }
+
+    // Check 3: Response time validation
+    if (status === "SUCCESS" && responseTime > MAX_RESPONSE_TIME_MS) {
+      status = "FAILURE";
+      errorMessage = `Response time too high: ${responseTime}ms (max allowed: ${MAX_RESPONSE_TIME_MS}ms)`;
     }
 
   } catch (err) {
@@ -57,7 +65,7 @@ export async function handler() {
   if (status === "FAILURE") {
     await sns.send(new PublishCommand({
       TopicArn: SNS_TOPIC_ARN,
-      Subject: `Website Down: ${WEBSITE_URL}`,
+      Subject: `Website Issue: ${WEBSITE_URL}`,
       Message: `Website: ${WEBSITE_URL}\nStatus: ${status}\nError: ${errorMessage}\nChecked at: ${timestamp}\nResponse time: ${responseTime}ms`,
     }));
   }

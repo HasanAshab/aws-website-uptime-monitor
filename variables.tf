@@ -16,25 +16,28 @@ variable "db_billing_mode" {
   default     = "PAY_PER_REQUEST"
 }
 
-variable "website_url" {
-  description = "URL of the target Website"
-  type        = string
-  default     = "https://example.com/"
-}
-
-variable "expected_keyword" {
-  description = "Expected keyword in the response"
-  type        = string
-  default = "Example Domain"
-}
-
-variable "ping_schedule" {
+variable "uptime_ping_schedule" {
   description = "EventBridge cron expression"
   type        = string
   default     = "cron(0 0 * * ? *)"
 }
 
-variable "subscriber_email" {
+variable "target_website_url" {
+  description = "URL of the target Website"
+  type        = string
+  default     = "https://example.com/"
+}
+
+variable "uptime_assertions" {
+  description = "Uptime assertions"
+  default = {
+    status_code          = 200
+    body_includes        = "Example Domain"
+    max_response_time_ms = 500
+  }
+}
+
+variable "uptime_alert_subscriber_email" {
   description = "Email address to receive notifications"
   type        = string
   default     = "hasanashab.18205@gmail.com"
