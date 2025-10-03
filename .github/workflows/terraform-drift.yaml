@@ -1,4 +1,4 @@
-name: Configuration Drift Detection
+name: Terraform Configuration Drift Detection
 
 on:
   workflow_dispatch:
@@ -6,8 +6,15 @@ on:
   #   - cron: '41 3 * * *' # runs nightly at 3:41 am
 
 env:
+  # ----- AWS -----
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # ----- Azure -----
+  # ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  # ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  # ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  # ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
 permissions:
   contents: read
@@ -40,7 +47,7 @@ jobs:
       id: tf-plan
       run: |
         export exitcode=0
-        terraform plan -detailed-exitcode -no-color -var-file=envs/prod.tfvars -out tfplan || export exitcode=$?
+        terraform plan -detailed-exitcode -no-color -var-file=infra/envs/prod.tfvars -out tfplan || export exitcode=$?
 
         echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
 

@@ -3,7 +3,7 @@ locals {
   normalized_routes = {
     for route, file_prefix in var.routes :
     route => {
-      name         = "${var.name_prefix}-${var.environment}-${file_prefix}"
+      name         = "${var.name_prefix}-${file_prefix}-${var.environment}"
       method       = upper(split(" ", route)[0])
       path         = join(" ", slice(split(" ", route), 1, length(split(" ", route))))
       handler_file = "${file_prefix}.${var.handler_extension}"

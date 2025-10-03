@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Update this URL to match your deployed API Gateway endpoint
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://your-api-gateway-url.execute-api.us-west-2.amazonaws.com';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

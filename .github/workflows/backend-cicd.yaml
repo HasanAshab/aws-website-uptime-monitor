@@ -1,0 +1,94 @@
+name: Backend CI/CD pipeline
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dashboard/backend/**'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'dashboard/backend/functions/**'
+      - 'dashboard/backend/package.json'
+
+defaults:
+  run:
+    working-directory: dashboard/backend
+
+env:
+  # ----- AWS -----
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  test:
+    name: Run Integration and Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+  lint:
+    name: Run lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+  deploy:
+    name: Deploy function
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/backend/package-lock.json
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Refresh Terraform State
+        run: terraform refresh -var-file=envs/prod.tfvars
+        env:
+          TF_WORKSPACE: prod
+
+      - name: Apply Terraform
+        run: terraform apply -var-file=envs/prod.tfvars -auto-approve -target=module.dashboard.module.backend.module.lambda_functions
+        env:
+          TF_WORKSPACE: prod

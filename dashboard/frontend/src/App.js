@@ -229,19 +229,21 @@ function App() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                   layout
                 >
-                  <div className="ping-status">
-                    <span
-                      className="status-icon"
-                      style={{ color: getStatusColor(ping.status) }}
-                    >
-                      {getStatusIcon(ping.status)}
-                    </span>
-                    <span className="status-text">{ping.status}</span>
-                  </div>
+                  <div className="ping-item-main">
+                    <div className="ping-status">
+                      <span
+                        className="status-icon"
+                        style={{ color: getStatusColor(ping.status) }}
+                      >
+                        {getStatusIcon(ping.status)}
+                      </span>
+                      <span className="status-text">{ping.status}</span>
+                    </div>
 
-                  <div className="ping-details">
-                    <span className="ping-time">{formatTime(ping.timestamp)}</span>
-                    <span className="response-time">{ping.responseTime}ms</span>
+                    <div className="ping-details">
+                      <span className="ping-time">{formatTime(ping.timestamp)}</span>
+                      <span className="response-time">{ping.responseTime}ms</span>
+                    </div>
                   </div>
 
                   {ping.errorMessage && (
