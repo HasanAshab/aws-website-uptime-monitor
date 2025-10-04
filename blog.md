@@ -60,7 +60,7 @@ Here's the flow:
 ```
 EventBridge (Every 5min) → Monitor Lambda → Check Website → Store Results → DynamoDB
                                                                               ↓
-React Dashboard ← API Lambda ← DynamoDB ← SNS Alerts (if down)
+React Dashboard ← API Lambda ← DynamoDB ← SNS Alerts (if check fails)
 ```
 
 Clean, simple, and bulletproof.
@@ -246,7 +246,7 @@ The dashboard uses:
 Now let's tie everything together with Terraform. Our infrastructure is modular and reusable:
 
 ### Main Configuration (`infra/main.tf`):
-```hcl
+```python
 # DynamoDB table for storing monitoring data
 module "dynamodb_table" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
@@ -291,7 +291,7 @@ module "dashboard" {
 ```
 
 ### Configuration Variables (`infra/variables.tf`):
-```hcl
+```python
 variable "target_website_url" {
   description = "URL of the website to monitor"
   type        = string
@@ -320,7 +320,7 @@ variable "uptime_alert_subscriber_email" {
 ```
 
 ### Environment Configuration (`infra/envs/prod.tfvars`):
-```hcl
+```python
 environment                   = "prod"
 aws_region                   = "us-west-2"
 target_website_url           = "https://your-website.com"
@@ -478,7 +478,7 @@ Expected monthly costs:
 Once your basic monitoring is working, consider these enhancements:
 
 ### Multi-Website Monitoring:
-```hcl
+```python
 # Monitor multiple websites
 variable "websites" {
   default = {
