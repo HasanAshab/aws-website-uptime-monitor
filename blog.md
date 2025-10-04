@@ -1,4 +1,4 @@
-# Build a Real-Time Website Uptime Monitor with AWS Lambda, EventBridge and Terraform
+# Never Miss a Downtime: AWS Website Uptime Monitor with Terraform
 
 *Stop wondering if your website is down.*
 Here's how to build a **complete uptime monitoring system** with real-time dashboard using AWS _Lambda_, _DynamoDB_, _React_, and _Terraform_ — get instant alerts when your site goes down.
@@ -53,7 +53,7 @@ Our monitoring system has six main components working together:
 5. **React Dashboard**: Beautiful real-time UI with charts and metrics
 6. **SNS**: Sends email alerts for downtime events
 
-![Website Uptime Monitor Architecture](static/images/architecture.png)
+![Website Uptime Monitor Architecture](https://raw.githubusercontent.com/HasanAshab/aws-website-uptime-monitor/main/static/images/architecture.png)
 
 Here's the flow:
 
