@@ -107,12 +107,12 @@ website-uptime-monitor/
     └── frontend-cicd.yaml
 ```
 
-You can either clone the complete project or create the structure manually:
+You can either clone the complete project [from GitHub](https://github.com/HasanAshab/aws-website-uptime-monitor) or create the structure manually:
 
 **Option 1: Clone the complete project (recommended):**
 ```bash
-git clone <your-repo-url>
-cd website-uptime-monitor
+git clone https://github.com/HasanAshab/aws-website-uptime-monitor.git
+cd aws-website-uptime-monitor
 ```
 
 **Option 2: Create the structure manually:**
@@ -130,14 +130,15 @@ The monitoring Lambda is the heart of our system. It performs HTTP checks, valid
 
 Here's what our monitoring function does:
 
-```python
-def lambda_handler(event, context):
-    # 1. Fetch the target website URL from environment
-    # 2. Perform HTTP request with timeout
-    # 3. Validate status code and response body
-    # 4. Measure response time
-    # 5. Store results in DynamoDB
-    # 6. Send SNS alert if website is down
+```js
+export async function handler(event, context) {
+  // 1. Fetch the target website URL from environment
+  // 2. Perform HTTP request with timeout
+  // 3. Validate status code and response body
+  // 4. Measure response time
+  // 5. Store results in DynamoDB
+  // 6. Send SNS alert if any check fails
+}
 ```
 
 The function checks for:
@@ -544,6 +545,6 @@ Now go forth and monitor with confidence!
 Reach out:
 * **Website**: [hasan-ashab](https://hasan-ashab.vercel.app/)
 * **LinkedIn**: [linkedin.com/in/hasan-ashab](https://linkedin.com/in/hasan-ashab/)
-* **GitHub**: Check out the complete code repository
+
 
 *Happy monitoring! 🚀*
